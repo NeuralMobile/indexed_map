@@ -136,17 +136,12 @@ activeUsers.add(User('alice', 'Alice')); // Alice moves to end
 
 Based on 10,000 items with 1,000 operations:
 
-```
-IndexedMap vs Alternatives:
-┌─────────────────────────┬─────────────┬─────────────────┐
-│ Operation               │ IndexedMap  │ Alternative     │
-├─────────────────────────┼─────────────┼─────────────────┤
-│ ID Lookup               │ ~0.05ms     │ Map: ~0.05ms    │
-│ Index Access            │ ~0.03ms     │ List: ~0.03ms   │
-│ ID Lookup (vs Linear)   │ ~0.05ms     │ List.firstWhere: ~50ms │
-│ Combined Ops            │ ~0.08ms     │ Map+List: ~0.12ms │
-└─────────────────────────┴─────────────┴─────────────────┘
-```
+| Operation             | IndexedMap | Alternative            |
+| --------------------- | ---------- | ---------------------- |
+| ID Lookup             | ~0.05ms    | Map: ~0.05ms           |
+| Index Access          | ~0.03ms    | List: ~0.03ms          |
+| ID Lookup (vs Linear) | ~0.05ms    | List.firstWhere: ~50ms |
+| Combined Ops          | ~0.08ms    | Map+List: ~0.12ms      |
 
 _Run benchmarks: `dart run benchmark/indexed_map_benchmark.dart`_
 
