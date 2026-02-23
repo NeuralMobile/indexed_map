@@ -5,18 +5,19 @@
 [![likes](https://img.shields.io/pub/likes/indexed_map?logo=dart)](https://pub.dev/packages/indexed_map/score)
 [![pub points](https://img.shields.io/pub/points/indexed_map?logo=dart)](https://pub.dev/packages/indexed_map/score)
 
-A high-performance hybrid data structure that combines the benefits of both Map and List in a single container, providing **O(1) lookup by ID** while maintaining **ordered/indexed access** to elements.
+A high-performance hybrid data structure that combines the benefits of both Map and List in a single container, providing **O(1) lookup by ID**, **O(1) indexed access**, and **O(1) index-of-ID resolution** while maintaining **ordered/indexed access** to elements.
 
 ## Features
 
-✅ **O(1) ID-based lookups** - Fast retrieval using unique identifiers  
-✅ **O(1) indexed access** - Direct access by position like a List  
-✅ **Ordered iteration** - Maintains insertion/move order  
-✅ **Configurable duplicate policies** - Control how duplicate IDs are handled  
-✅ **In-place sorting** - Sort without losing ID associations  
-✅ **Memory efficient** - Optimized internal storage with wrapper objects  
-✅ **Type safe** - Full generic type support with compile-time safety  
-✅ **Comprehensive API** - Rich set of operations for all use cases
+- **O(1) ID-based lookups** - Fast retrieval using unique identifiers
+- **O(1) indexed access** - Direct access by position like a List
+- **O(1) index-of-ID** - Find an item's position by its ID instantly
+- **Ordered iteration** - Maintains insertion/move order
+- **Configurable duplicate policies** - Control how duplicate IDs are handled
+- **In-place sorting** - Sort without losing ID associations
+- **Bulk operations** - `addAll` and `removeWhere` for efficient batch work
+- **Memory efficient** - Optimized internal storage with wrapper objects
+- **Type safe** - Full generic type support with compile-time safety
 
 ## Perfect for
 
@@ -61,6 +62,10 @@ void main() {
   // O(1) indexed access
   final firstUser = users[0];
   print(firstUser); // User(u1, Alice)
+
+  // O(1) find position by ID
+  final position = users.indexOfId('u2');
+  print(position); // 1
 
   // Insert at specific position
   users.insertAt(1, User('u4', 'David'));
@@ -120,17 +125,21 @@ activeUsers.add(User('alice', 'Alice')); // Alice moves to end
 
 ## Performance Characteristics
 
-| Operation               | Time Complexity | Description           |
-| ----------------------- | --------------- | --------------------- |
-| `add(item)`             | O(1) amortized  | Add to end            |
-| `getById(id)`           | O(1)            | Lookup by ID          |
-| `operator[](index)`     | O(1)            | Access by index       |
-| `insertAt(index, item)` | O(n)            | Insert at position    |
-| `removeById(id)`        | O(n)            | Remove by ID          |
-| `removeAt(index)`       | O(n)            | Remove by index       |
-| `moveIdTo(id, index)`   | O(n)            | Move item to position |
-| `sortBy(comparator)`    | O(n log n)      | In-place sort         |
-| `indexOfId(id)`         | O(1)            | Find position of ID   |
+| Operation               | Time Complexity | Description             |
+| ----------------------- | --------------- | ----------------------- |
+| `add(item)`             | O(1) amortized  | Add to end (new ID)     |
+| `addAll(items)`         | O(k) amortized  | Add k items             |
+| `getById(id)`           | O(1)            | Lookup by ID            |
+| `operator[](index)`     | O(1)            | Access by index         |
+| `indexOfId(id)`         | O(1)            | Find position of ID     |
+| `containsId(id)`        | O(1)            | Check if ID exists      |
+| `contains(item)`        | O(1)            | Check if item exists    |
+| `insertAt(index, item)` | O(n)            | Insert at position      |
+| `removeById(id)`        | O(n)            | Remove by ID            |
+| `removeAt(index)`       | O(n)            | Remove by index         |
+| `removeWhere(test)`     | O(n)            | Remove matching items   |
+| `moveIdTo(id, index)`   | O(n)            | Move item to position   |
+| `sortBy(comparator)`    | O(n log n)      | In-place sort           |
 
 ### Benchmark Results
 
@@ -154,7 +163,6 @@ class Message implements MapIndexable<String> {
   final String id;
   final String content;
   final String senderId;
-  final DateTime timestamp;
 
   Message(this.id, this.content, this.senderId);
 
@@ -169,9 +177,8 @@ messages.add(Message('msg1', 'Hello!', 'alice'));
 messages.add(Message('msg2', 'Hi there!', 'bob'));
 
 // Quick edit by ID (e.g., user edited message)
-final originalMsg = messages.getById('msg1');
-messages[messages.indexOfId('msg1')] =
-    Message('msg1', 'Hello everyone!', 'alice');
+final idx = messages.indexOfId('msg1'); // O(1)
+messages[idx] = Message('msg1', 'Hello everyone!', 'alice');
 
 // Insert out-of-order message
 messages.insertAt(1, Message('msg3', 'Good morning!', 'carol'));
@@ -213,7 +220,7 @@ catalog.sortBy((a, b) => a.price.compareTo(b.price));
 
 // Quick lookup still works after sorting
 final laptop = catalog.getById(1);
-final laptopPosition = catalog.indexOfId(1);
+final laptopPosition = catalog.indexOfId(1); // O(1)
 ```
 
 ### 4. Cache with LRU-like Behavior
@@ -263,17 +270,20 @@ IndexedMap<T, I>.fromIterable(Iterable<T> items, {DuplicatePolicy duplicatePolic
 ```dart
 // Adding items
 bool add(T item)
+int addAll(Iterable<T> items)
 void insertAt(int index, T item)
 
 // Retrieving items
 T? getById(I id)
 T operator[](int index)
 bool containsId(I id)
-int indexOfId(I id)
+bool contains(Object? element)   // O(1) by ID
+int indexOfId(I id)              // O(1)
 
 // Removing items
 T? removeById(I id)
 T removeAt(int index)
+int removeWhere(bool Function(T) test)
 void clear()
 
 // Updating items
@@ -292,7 +302,9 @@ void sortBy(Comparator<T> comparator)
 ```dart
 // Read-only access
 Iterable<T> get values
+Iterable<I> get keys
 List<T> toList({bool growable = false})
+Map<I, T> toMap()
 List<ItemWrapper<T, I>> get wrappers
 Map<I, ItemWrapper<T, I>> get asMapView
 
@@ -300,50 +312,24 @@ Map<I, ItemWrapper<T, I>> get asMapView
 int get length
 bool get isEmpty
 bool get isNotEmpty
+T get first
+T get last
 
 // Iteration
 Iterator<T> get iterator  // Supports for-in loops
 ```
 
-## Advanced Features
-
-### Custom Wrapper Metadata
-
-The `ItemWrapper<T, I>` class can be extended for additional metadata:
-
-```dart
-class TimestampedWrapper<T extends MapIndexable<I>, I> extends ItemWrapper<T, I> {
-  final DateTime createdAt;
-  final bool isPinned;
-
-  TimestampedWrapper(T item, {this.isPinned = false})
-      : createdAt = DateTime.now(),
-        super(item);
-}
-```
-
-### Bulk Operations
-
-```dart
-// Bulk add with duplicate handling
-final users = [User('1', 'Alice'), User('2', 'Bob')];
-final map = IndexedMap<User, String>.fromIterable(users);
-
-// Bulk operations using standard Iterable methods
-final adults = map.where((user) => user.age >= 18);
-final names = map.map((user) => user.name);
-final sorted = map.toList()..sort((a, b) => a.name.compareTo(b.name));
-```
-
 ### Error Handling
 
 ```dart
-// Safe operations that return null
-final user = map.getById('nonexistent'); // null
+// Safe operations that return null / -1 / false
+final user = map.getById('nonexistent');   // null
 final removed = map.removeById('nonexistent'); // null
+final idx = map.indexOfId('nonexistent');   // -1
+final moved = map.moveIdTo('nonexistent', 0); // false
 
 // Operations that throw on invalid input
-final user = map[999]; // RangeError
+final user = map[999];         // RangeError
 final removed = map.removeAt(-1); // RangeError
 ```
 
@@ -355,15 +341,6 @@ Run the comprehensive test suite:
 dart test
 ```
 
-The test suite includes:
-
-- ✅ All operations and edge cases
-- ✅ All duplicate policies
-- ✅ Error conditions
-- ✅ Real-world scenarios
-- ✅ Type safety verification
-- ✅ Memory leak detection
-
 ## Benchmarking
 
 Run performance benchmarks:
@@ -372,22 +349,14 @@ Run performance benchmarks:
 dart run benchmark/indexed_map_benchmark.dart
 ```
 
-Compare with alternatives:
-
-```bash
-# Add benchmark_harness to dev_dependencies first
-dart pub get
-dart run benchmark/indexed_map_benchmark.dart
-```
-
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines and:
+Contributions are welcome! Please:
 
-1. 🐛 **Report bugs** with minimal reproduction cases
-2. 💡 **Suggest features** with clear use cases
-3. 🔧 **Submit PRs** with tests and benchmarks
-4. 📚 **Improve docs** and examples
+1. Report bugs with minimal reproduction cases
+2. Suggest features with clear use cases
+3. Submit PRs with tests and benchmarks
+4. Improve docs and examples
 
 ## License
 

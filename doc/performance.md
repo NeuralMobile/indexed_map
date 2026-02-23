@@ -17,6 +17,7 @@ This document provides detailed performance analysis and comparisons between `In
 | ----------------------- | ---------- | ----------------------- | --------- | ------------------------ |
 | **ID Lookup**           | ~173μs     | Map: ~160μs             | 0.9x      | O(1) vs O(1)             |
 | **Index Access**        | ~7μs       | List: ~10μs             | 1.4x      | O(1) vs O(1)             |
+| **Index of ID**         | O(1)       | List.indexOf: O(n)      | **n×**    | O(1) vs O(n)             |
 | **ID Lookup vs Linear** | ~173μs     | List.firstWhere: ~206ms | **1190x** | O(1) vs O(n)             |
 | **Add Operation**       | ~8.5ms     | List.add: ~3ms          | 0.35x     | O(1) vs O(1)             |
 | **Remove by ID**        | ~180ms     | Map.remove: ~0.1ms      | 0.0006x   | O(n) vs O(1)             |
