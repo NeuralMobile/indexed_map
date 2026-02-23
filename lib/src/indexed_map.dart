@@ -63,9 +63,9 @@ class IndexedMap<T extends MapIndexable<I>, I> with IterableMixin<T> {
     @Deprecated('This parameter is ignored and will be removed in 2.0.0.')
     List<ItemWrapper<T, I>>? list,
     this.duplicatePolicy = DuplicatePolicy.replaceKeepPosition,
-  })  : _map = <I, ItemWrapper<T, I>>{},
-        _list = <ItemWrapper<T, I>>[],
-        _indexMap = <I, int>{};
+  }) : _map = <I, ItemWrapper<T, I>>{},
+       _list = <ItemWrapper<T, I>>[],
+       _indexMap = <I, int>{};
 
   /// Build from an iterable. Duplicates are resolved via [duplicatePolicy].
   factory IndexedMap.fromIterable(
@@ -155,8 +155,10 @@ class IndexedMap<T extends MapIndexable<I>, I> with IterableMixin<T> {
         }
         // Adjust insertion point: if the collision was before the target
         // position, its removal shifted the target left by 1.
-        final insertIdx =
-            (existingIdx < index ? index - 1 : index).clamp(0, _list.length);
+        final insertIdx = (existingIdx < index ? index - 1 : index).clamp(
+          0,
+          _list.length,
+        );
         final wrapped = ItemWrapper<T, I>(newItem);
         _list.insert(insertIdx, wrapped);
         _map[newId] = wrapped;
@@ -343,8 +345,9 @@ class IndexedMap<T extends MapIndexable<I>, I> with IterableMixin<T> {
       _list.map((w) => w.item).toList(growable: growable);
 
   /// Return a [Map] from id to item.
-  Map<I, T> toMap() =>
-      {for (final entry in _map.entries) entry.key: entry.value.item};
+  Map<I, T> toMap() => {
+    for (final entry in _map.entries) entry.key: entry.value.item,
+  };
 
   /// O(1) index of an id, or -1 if missing.
   int indexOfId(I id) => _indexMap[id] ?? -1;
@@ -390,8 +393,10 @@ class IndexedMap<T extends MapIndexable<I>, I> with IterableMixin<T> {
         }
         // Adjust insertion point: if the collision was before the target
         // position, its removal shifted the target left by 1.
-        final insertPos =
-            (existingIdx < pos ? pos - 1 : pos).clamp(0, _list.length);
+        final insertPos = (existingIdx < pos ? pos - 1 : pos).clamp(
+          0,
+          _list.length,
+        );
         final wrapped = ItemWrapper<T, I>(newItem);
         _list.insert(insertPos, wrapped);
         _map[newId] = wrapped;
@@ -461,8 +466,7 @@ class IndexedMap<T extends MapIndexable<I>, I> with IterableMixin<T> {
 }
 
 /// Dedicated iterator with fail-fast concurrent-modification detection.
-class _IndexedMapIterator<T extends MapIndexable<I>, I>
-    implements Iterator<T> {
+class _IndexedMapIterator<T extends MapIndexable<I>, I> implements Iterator<T> {
   final IndexedMap<T, I> _owner;
   final int _expectedModCount;
   int _index = -1;
